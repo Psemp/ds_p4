@@ -55,6 +55,8 @@ def convert_to_holy_metric(data, col_name: str, hint: str = None):
 
     if hint is not None:
         base_unit = hint
+    if hint == "skip":
+        base_unit = "skip"
     elif "gfa" in col_name:
         base_unit = "GFA"
     elif "kbtu/sf" in col_name:
@@ -75,5 +77,7 @@ def convert_to_holy_metric(data, col_name: str, hint: str = None):
             return kbtusf_to_kw_sqm(data)
         case "square_foot" | "sqft":
             return sqft_to_sqm(data)
+        case "skip":
+            pass
         case _:
             raise Exception("Base unit not found, use 'hint' parameter to precise it")
