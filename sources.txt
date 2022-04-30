@@ -1,0 +1,6 @@
+variable description : https://data.seattle.gov/dataset/2016-Building-Energy-Benchmarking/2bpz-gwpy
+energystar algorithm : https://www.energystar.gov/buildings/benchmark/understand_metrics/how_score_calculated
+data : https://www.kaggle.com/datasets/city-of-seattle/sea-building-energy-benchmarking
+conversion tables : https://www.theunitconverter.com/
+proof reading : https://ec.europa.eu/energy/eu-buildings-factsheets-topics-tree/energy-use-buildings_en & https://www.eia.gov/consumption/commercial/data/2012/c&e/cfm/pba4.php
+EUI : https://www.energystar.gov/buildings/benchmark/understand_metrics/what_eui
