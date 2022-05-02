@@ -4,3 +4,5 @@ data : https://www.kaggle.com/datasets/city-of-seattle/sea-building-energy-bench
 conversion tables : https://www.theunitconverter.com/
 proof reading : https://ec.europa.eu/energy/eu-buildings-factsheets-topics-tree/energy-use-buildings_en & https://www.eia.gov/consumption/commercial/data/2012/c&e/cfm/pba4.php
 EUI : https://www.energystar.gov/buildings/benchmark/understand_metrics/what_eui
+K12 : https://en.wikipedia.org/wiki/K%E2%80%9312
+mucho legal stuff / urbanism definitions : https://www.lawinsider.com/
