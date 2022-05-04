@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import numpy as np
+import pandas as pd
 
 
 def display_circles(pcs, n_comp, pca, axis_ranks, labels=None, label_rotation=0, lims=None):
@@ -63,4 +64,21 @@ def display_circles(pcs, n_comp, pca, axis_ranks, labels=None, label_rotation=0,
             plt.ylabel(f"PC{d2+1} ({round(100*pca.explained_variance_ratio_[d2],1)}%)")
 
             plt.title(f"Cercle des corrélations (PC{d1 + 1} et PC{d2 + 1})")
+            plt.tight_layout()
             plt.show(block=False)
+
+
+def show_contribution(pca, columns_pca: list, percentage_variation: list) -> pd.DataFrame:
+    sers = {}
+    contrib_dict = {}
+
+    for i in range(0, len(pca.components_)):
+        sers[f"PC{i + 1}"] = pd.Series(pca.components_[i], index=columns_pca)
+        contrib_dict[f"PC{i + 1}"] = pd.Series(percentage_variation[i], index=["contribution"])
+
+    components_df = pd.DataFrame(sers)
+    temp = pd.DataFrame(contrib_dict)
+    frames = [components_df, temp]
+    components_df = pd.concat(frames)
+
+    return components_df
