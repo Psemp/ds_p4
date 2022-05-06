@@ -68,13 +68,51 @@ def display_circles(pcs, n_comp, pca, axis_ranks, labels=None, label_rotation=0,
             plt.show(block=False)
 
 
-def show_contribution(pca, columns_pca: list, percentage_variation: list) -> pd.DataFrame:
+def show_contribution(pca, columns_pca: list, lim_pc: int = None) -> pd.DataFrame:
+    """
+    Takes the pca object, the list of target columns for the pca and the percentages of variation
+    to return a pd.DataFrame object with details on the principal components
+
+    Args :
+    - pca : The PCA object
+    - columns_pca : list of column upon which the PCA was applied
+    - lim_pc : Optionnal, default = None, the last Principal component (PC after PC_lim_pc will be ignoredS)
+    Returns :
+    - DataFrame with detailed characteristics of each PC
+    """
+
+    percentage_variation = np.round(pca.explained_variance_ratio_ * 100, decimals=1)
     sers = {}
     contrib_dict = {}
 
-    for i in range(0, len(pca.components_)):
-        sers[f"PC{i + 1}"] = pd.Series(pca.components_[i], index=columns_pca)
-        contrib_dict[f"PC{i + 1}"] = pd.Series(percentage_variation[i], index=["contribution"])
+    if lim_pc is None:
+
+        for i in range(0, len(pca.components_)):
+            sers[f"PC{i + 1}"] = pd.Series(pca.components_[i], index=columns_pca)
+            contrib_dict[f"PC{i + 1}"] = pd.Series(percentage_variation[i], index=["contribution"])
+            contrib_dict["commulative_contribution"] = percentage_variation[i]
+
+        cummulative_contribution = percentage_variation[i]
+
+        if i == 0:
+            contrib_dict["commulative_contribution"] = cummulative_contribution
+        elif i != 0:
+            for index in range(0, i - 1, 1):
+                cummulative_contribution += percentage_variation[index]
+
+    elif lim_pc is not None:
+
+        for i in range(0, lim_pc):
+            sers[f"PC{i + 1}"] = pd.Series(pca.components_[i], index=columns_pca)
+            contrib_dict[f"PC{i + 1}"] = pd.Series(percentage_variation[i], index=["contribution"])
+
+        cummulative_contribution = percentage_variation[i]
+
+        if i == 0:
+            contrib_dict["commulative_contribution"] = cummulative_contribution
+        elif i != 0:
+            for index in range(0, i - 1, 1):
+                cummulative_contribution += percentage_variation[index]
 
     components_df = pd.DataFrame(sers)
     temp = pd.DataFrame(contrib_dict)
