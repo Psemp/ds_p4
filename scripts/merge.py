@@ -45,14 +45,16 @@ def complete_df(df_one: pd.DataFrame, df_two: pd.DataFrame, on_col: str = None) 
             idx = index
 
         for row in list(series.index):
-            if pd.isna(series[row]):
+            if (series.size > 0 or pd.isna(series[row])):
                 try:
                     if on_col is not None:
                         df_two_sers = df_two[df_two["OSEBuildingID"] == idx]
                     elif on_col is None:
                         df_two_sers = df_two.iloc[idx]
 
-                    if not pd.isna(df_two_sers[row].values):
-                        df_one.at[index, row] = df_two_sers[row]
+                    if (df_two_sers[row].values.size > 0 and not pd.isna(df_two_sers[row].values)):
+                        df_one.at[index, row] = df_two_sers[row].values
+                    else:
+                        pass
                 except KeyError:
                     pass  # Key of df_one not in df_two
