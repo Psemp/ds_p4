@@ -7,4 +7,4 @@ EUI : https://www.energystar.gov/buildings/benchmark/understand_metrics/what_eui
 K12 : https://en.wikipedia.org/wiki/K%E2%80%9312
 mucho legal stuff / urbanism definitions : https://www.lawinsider.com/
 Source energy vs Site energy : https://www.energystar.gov/buildings/benchmark/understand_metrics/source_site_difference
-Weather Normalized : 
+Weather Normalized : https://energystar-mesa.force.com/PortfolioManager/s/article/What-is-Weather-Normalized-energy-1600088536894
