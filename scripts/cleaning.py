@@ -10,7 +10,7 @@ def remove_outliers(column_eval: str,  df: pd.DataFrame) -> pd.DataFrame:
     Args:
      - column_eval : name of the column to evaluate, dtype must be int or float
      - df : the dataframe to clean
-    Returns : pd.DataFrame
+    Returns : Void function
     """
     dtype = str(df[column_eval].dtype)
     if not (dtype.startswith("int") or dtype.startswith("float")):
@@ -27,4 +27,7 @@ def remove_outliers(column_eval: str,  df: pd.DataFrame) -> pd.DataFrame:
     iqr = (q3 - q1) * 1.5
     q3_max = q3 + iqr
     q1_min = q1 - iqr
-    return df[column_eval][(df[column_eval] < q3_max) & (df[column_eval] > q1_min)]
+
+    for index, row in df.iterrows():
+        if (row[column_eval] < q1_min) or (row[column_eval] > q3_max):
+            df.drop(index=index, axis=1, inplace=True)
