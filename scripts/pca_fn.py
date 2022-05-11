@@ -15,7 +15,7 @@ def display_circles(pca, pca_cols: list, couple_pc: tuple):
     - couple_pc : tuple (x, y) as x and y indexes of principal components
 
     Returns:
-    - Void functio, displays plot
+    - Void function, displays plot
     """
     x_pc = couple_pc[0]
     y_pc = couple_pc[1]

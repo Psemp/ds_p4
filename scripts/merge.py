@@ -23,6 +23,7 @@ def merge_cols(origin_col_list: list, target_col_name: str, dataframe: pd.DataFr
 
 
 def complete_df(df_one: pd.DataFrame, df_two: pd.DataFrame, on_col: str = None) -> pd.DataFrame:
+    # Not yet functionnal
     """
     Void function - Takes df_one and df_two, df_one as the most up to date, df_two as an older df
     function will try to fill the nan values from df_one if value is non nan in df_two

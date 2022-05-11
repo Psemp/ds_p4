@@ -6,7 +6,7 @@ def remove_outliers(column_eval: str,  df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculates the IQR (Inter Quartile Range) for each column value of the column_subset of a DataFrame using
      the column to evaluate.
-    Applies the method to clean the data for each value in the subset and returns a cleaned dataframe
+    Applies the method to clean the data for col passed in parameter by dropping the index/row
     Args:
      - column_eval : name of the column to evaluate, dtype must be int or float
      - df : the dataframe to clean
