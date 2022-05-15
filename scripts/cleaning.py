@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 
+from sklearn.preprocessing import StandardScaler
+
 
 def remove_outliers(column_eval: str,  df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -31,3 +33,31 @@ def remove_outliers(column_eval: str,  df: pd.DataFrame) -> pd.DataFrame:
     for index, row in df.iterrows():
         if (row[column_eval] < q1_min) or (row[column_eval] > q3_max):
             df.drop(index=index, axis=1, inplace=True)
+
+
+def scale_df(dataframe_to_scale: pd.DataFrame, constant_col: str = None) -> pd.DataFrame:
+    """
+    Function : Uses sklearn's StandardScaler to scale data in dataframe to scale, returns scaled dataframe
+
+    Args :
+    - dataframe_to_scale : Dataframe object containing data to scale
+    - constant_col - Optionnal : col_name in dataframe_to_scale to keep as is in scaled_df return
+
+    Returns :
+    - Dataframe object containing scaled data
+    """
+    scaler = StandardScaler()
+
+    colums = dataframe_to_scale.columns
+
+    scaled_df = pd.DataFrame(index=dataframe_to_scale.index)
+
+    scaled_data = scaler.fit_transform(dataframe_to_scale).T
+
+    for arr in range(0, len(scaled_data)):
+        scaled_df[colums[arr]] = scaled_data[arr]
+
+    if constant_col is not None:
+        scaled_df[constant_col] = dataframe_to_scale[constant_col]
+
+    return scaled_df
