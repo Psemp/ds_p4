@@ -1,0 +1,5 @@
+seattle_scaled_clean_data.csv --> OneHotEncoder was applied on :
+1 : Neighborhood
+2 : PrimaryPropertyType
+
+To recognize which is which, Neighborhood cols are always capitalized
