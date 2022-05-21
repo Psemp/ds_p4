@@ -58,7 +58,7 @@ def scale_df(dataframe_to_scale: pd.DataFrame, constant_col: list = None) -> pd.
     scaled_data = scaler.fit_transform(dataframe_to_scale[columns]).T
 
     for arr in range(0, len(scaled_data)):
-        scaled_df[columns[arr]] = scaled_data[arr]
+        scaled_df[f"scaled_{columns[arr]}"] = scaled_data[arr]
 
     if constant_col is not None:
         for col in constant_col:
