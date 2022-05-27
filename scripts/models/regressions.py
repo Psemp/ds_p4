@@ -1,10 +1,16 @@
+# import time
+
 import pandas as pd
 import numpy as np
 
+# from collections import namedtuple
 from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 from sklearn.linear_model import ElasticNetCV, Ridge, Lasso
 from sklearn.linear_model import LinearRegression
 from sklearn import metrics
+
+
+# Timescore = namedtuple("Timescore", ["fit", "predict"])
 
 
 class Regressions():
@@ -16,6 +22,7 @@ class Regressions():
     }
 
     def __init__(self, dataframe: pd.DataFrame, target_col: str, split_size: float = 0.3) -> None:
+
         self.df_origin = dataframe
 
         ##
@@ -29,10 +36,9 @@ class Regressions():
         #
         ##
 
-        self.std_calc = False
-        self.ridge_calc = False
-        self.lasso_calc = False
-        self.enet_calc = False
+        self.std_calc, self.ridge_calc, self.lasso_calc, self.enet_calc = False, False, False, False
+        listed_ytest = [value[0] for value in self.y_test]
+        self.df_predictions = pd.DataFrame({"True": listed_ytest})
 
     def get_metrics(self, y_pred):
 
@@ -47,25 +53,46 @@ class Regressions():
         return metric_dict
 
     def standard_regression(self, override_default: dict = None):
+
+        std_parameters = Regressions.common_parameters
+
+        if override_default is not None:
+            try:
+                for key in override_default.keys():
+                    std_parameters[key] = override_default[key]
+            except KeyError:
+                pass
+        else:
+            pass
+
         if not self.std_calc:
-            lin_reg = LinearRegression()
-            lin_reg.fit(self.X_train, self.y_train)
+            print("Step : standard regression")
+
+            self.lin_reg = LinearRegression()
+            self.lin_reg.fit(self.X_train, self.y_train)
 
             if override_default is not None:
-                pass
+                try:
+                    for key in override_default.keys():
+                        std_parameters[key] = override_default[key]
+                except KeyError:
+                    pass
+
             elif override_default is None:
 
                 scores_regression = cross_val_score(
-                    lin_reg,
+                    self.lin_reg,
                     X=self.X_train,
                     y=self.y_train,
-                    scoring=Regressions.common_parameters["scoring"],
-                    cv=Regressions.common_parameters["cv"],
-                    n_jobs=Regressions.common_parameters["n_jobs"],
+                    scoring=std_parameters["scoring"],
+                    cv=std_parameters["cv"],
+                    n_jobs=std_parameters["n_jobs"],
                 )
 
             self.std_reg_mean_r2 = scores_regression.mean()
-            y_pred_basic = lin_reg.predict(self.X_test)
+            y_pred_basic = self.lin_reg.predict(self.X_test)
+
+            self.df_predictions["basic_regression"] = y_pred_basic
 
             self.std_reg_metrics = self.get_metrics(y_pred=y_pred_basic)
             self.std_calc = True
@@ -75,26 +102,39 @@ class Regressions():
 
     def ridge_regression(self, override_default: dict = None):
 
+        ridge_parameters = Regressions.common_parameters
+
+        if override_default is not None:
+            try:
+                for key in override_default.keys():
+                    ridge_parameters[key] = override_default[key]
+            except KeyError:
+                pass
+
         if not self.ridge_calc:
+            print("Step : Ridge")
+
             ridge = Ridge()
             n_alphas = 200
             alphas = np.logspace(-5, 5, n_alphas)
             parameter = {"alpha": alphas}
-            clf_ridge = GridSearchCV(
+            self.clf_ridge = GridSearchCV(
                 estimator=ridge,
                 param_grid=parameter,
-                scoring=Regressions.common_parameters["scoring"],
-                cv=Regressions.common_parameters["cv"],
-                n_jobs=Regressions.common_parameters["n_jobs"],
+                scoring=ridge_parameters["scoring"],
+                cv=ridge_parameters["cv"],
+                n_jobs=ridge_parameters["n_jobs"],
             )
 
-            clf_ridge.fit(
+            self.clf_ridge.fit(
                 X=self.X_train,
                 y=self.y_train
             )
 
-            self.ridge_best_alpha = clf_ridge.best_params_["alpha"]
-            y_pred_ridge = clf_ridge.predict(self.X_test)
+            self.ridge_best_alpha = self.clf_ridge.best_params_["alpha"]
+            y_pred_ridge = self.clf_ridge.predict(self.X_test)
+
+            self.df_predictions["ridge"] = y_pred_ridge
 
             self.ridge_metrics = self.get_metrics(y_pred=y_pred_ridge)
             self.ridge_calc = True
@@ -104,24 +144,37 @@ class Regressions():
 use self.ridge_metrics to get the results")
 
     def lasso_regression(self, override_default: dict = None):
+
+        lasso_parameters = Regressions.common_parameters
+        if override_default is not None:
+            try:
+                for key in override_default.keys():
+                    lasso_parameters[key] = override_default[key]
+            except KeyError:
+                pass
+
         if not self.lasso_calc:
+            print("Step : Lasso")
+
             lasso = Lasso()
             parameter = {"alpha": np.arange(0.01, 10, 0.01)}
 
-            clf_lasso = GridSearchCV(
+            self.clf_lasso = GridSearchCV(
                 estimator=lasso,
                 param_grid=parameter,
-                scoring=Regressions.common_parameters["scoring"],
-                cv=Regressions.common_parameters["cv"],
-                n_jobs=Regressions.common_parameters["n_jobs"],
+                scoring=lasso_parameters["scoring"],
+                cv=lasso_parameters["cv"],
+                n_jobs=lasso_parameters["n_jobs"],
             )
 
-            clf_lasso.fit(
+            self.clf_lasso.fit(
                     X=self.X_train,
                     y=self.y_train
                 )
-            self.best_alpha_lasso = clf_lasso.best_params_["alpha"]
-            y_pred_lasso = clf_lasso.predict(self.X_test)
+            self.lasso_best_alpha = self.clf_lasso.best_params_["alpha"]
+            y_pred_lasso = self.clf_lasso.predict(self.X_test)
+
+            self.df_predictions["lasso"] = y_pred_lasso
 
             self.lasso_metrics = self.get_metrics(y_pred=y_pred_lasso)
             self.lasso_calc = True
@@ -130,24 +183,37 @@ use self.ridge_metrics to get the results")
 use self.lasso_metrics to get the results")
 
     def elastic_net_reg(self, override_default: dict = None):
+
+        enet_parameters = Regressions.common_parameters
+
+        if override_default is not None:
+            try:
+                for key in override_default.keys():
+                    enet_parameters[key] = override_default[key]
+            except KeyError:
+                pass
+
         if not self.enet_calc:
+            print("Step : Elastic Net")
             l1_range = np.arange(0.01, 0.99, 0.05)
-            clf_elastic_net = ElasticNetCV(
+            self.clf_enet = ElasticNetCV(
                 l1_ratio=l1_range,
                 n_alphas=150,
-                cv=Regressions.common_parameters["cv"],
-                n_jobs=Regressions.common_parameters["n_jobs"],
+                cv=enet_parameters["cv"],
+                n_jobs=enet_parameters["n_jobs"],
             )
 
-            clf_elastic_net.fit(
+            self.clf_enet.fit(
                 X=self.X_train,
                 y=self.y_train
             )
 
-            self.enet_best_l1_ratio = clf_elastic_net.l1_ratio_
-            self.enet_best_alpha = clf_elastic_net.alpha_
+            self.enet_best_l1_ratio = self.clf_enet.l1_ratio_
+            self.enet_best_alpha = self.clf_enet.alpha_
 
-            y_pred_enet = clf_elastic_net.predict(self.X_test)
+            y_pred_enet = self.clf_enet.predict(self.X_test)
+
+            self.df_predictions["Elastic_Net"] = y_pred_enet
 
             self.elastic_net_metrics = self.get_metrics(y_pred=y_pred_enet)
             self.enet_calc = True
@@ -167,30 +233,32 @@ use self.lasso_metrics to get the results")
             self.display_all_metrics()
         else:
 
-            hashes = "###############"
+            hashes = "\n###############\n"
+
+            print(hashes)
 
             print("Standard :")
             for key in self.std_reg_metrics.keys():
-                print(key, " = ", self.std_reg_metrics[key])
+                print(" -", key, " = ", self.std_reg_metrics[key])
 
             print(hashes)
 
             print("Ridge :")
-            print(f"Ridge best alpha = {self.ridge_best_alpha}")
+            print(f" - Ridge best alpha = {self.ridge_best_alpha}")
             for key in self.ridge_metrics.keys():
-                print(key, " = ", self.ridge_metrics[key])
+                print(" -", key, " = ", self.ridge_metrics[key])
 
             print(hashes)
 
             print("LASSO : ")
-            print(f"Best LASSO alpha : {self.best_alpha_lasso}")
+            print(f" - Best LASSO alpha : {self.lasso_best_alpha}")
             for key in self.lasso_metrics.keys():
-                print(key, " = ", self.lasso_metrics[key])
+                print(" -", key, " = ", self.lasso_metrics[key])
 
             print(hashes)
 
             print("Elastic Net :")
-            print(f"Elastic net best l1 ratio = {self.enet_best_l1_ratio}")
-            print(f"Elastic net best alpha = {self.enet_best_alpha}")
+            print(f" - Elastic net best l1 ratio = {self.enet_best_l1_ratio}")
+            print(f" - Elastic net best alpha = {self.enet_best_alpha}")
             for key in self.elastic_net_metrics.keys():
-                print(key, " = ", self.elastic_net_metrics[key])
+                print(" -", key, " = ", self.elastic_net_metrics[key])
