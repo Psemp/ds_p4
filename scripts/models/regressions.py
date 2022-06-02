@@ -5,7 +5,7 @@ import numpy as np
 
 # from collections import namedtuple
 from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
-from sklearn.linear_model import ElasticNetCV, Ridge, Lasso
+from sklearn.linear_model import ElasticNetCV, Ridge, Lasso, RidgeCV
 from sklearn.linear_model import LinearRegression
 from sklearn import metrics
 
@@ -37,6 +37,7 @@ class Regressions():
         ##
 
         self.std_calc, self.ridge_calc, self.lasso_calc, self.enet_calc = False, False, False, False
+        self.ridge_cv_calc = False
         listed_ytest = [value[0] for value in self.y_test]
         self.df_predictions = pd.DataFrame({"True": listed_ytest})
 
@@ -100,7 +101,7 @@ class Regressions():
         elif self.std_calc:
             print("Baseline regression already calculated for this model, use self.std_reg_metrics to get the results")
 
-    def ridge_regression(self, override_default: dict = None):
+    def ridge_regression(self, override_default: dict = None, alphas_override=None):
 
         ridge_parameters = Regressions.common_parameters
 
@@ -114,9 +115,14 @@ class Regressions():
         if not self.ridge_calc:
             print("Step : Ridge")
 
-            ridge = Ridge()
-            n_alphas = 200
-            alphas = np.logspace(-5, 5, n_alphas)
+            ridge = Ridge(fit_intercept=False)
+
+            if alphas_override is None:
+                step_alphas = 0.05
+                alphas = np.arange(0.01, 50, step_alphas)
+            elif alphas_override is not None:
+                alphas = alphas_override
+
             parameter = {"alpha": alphas}
             self.clf_ridge = GridSearchCV(
                 estimator=ridge,
@@ -127,6 +133,49 @@ class Regressions():
             )
 
             self.clf_ridge.fit(
+                X=self.X_train,
+                y=self.y_train
+            )
+
+            self.ridge_best_alpha = self.clf_ridge.best_params_["alpha"]
+            y_pred_ridge = self.clf_ridge.predict(self.X_test)
+
+            self.df_predictions["ridge"] = y_pred_ridge
+
+            self.ridge_metrics = self.get_metrics(y_pred=y_pred_ridge)
+            self.ridge_calc = True
+
+        elif self.ridge_calc:
+            print("Ridge regression optimal parameters already calculated for this model, \
+use self.ridge_metrics to get the results")
+
+    def ridge_cv_regression(self, override_default: dict = None, alphas_override=None):
+
+        ridge_parameters = Regressions.common_parameters
+
+        if override_default is not None:
+            try:
+                for key in override_default.keys():
+                    ridge_parameters[key] = override_default[key]
+            except KeyError:
+                pass
+
+        if alphas_override is None:
+            step_alphas = 0.05
+            alphas = np.arange(0.01, 50, step_alphas)
+        elif alphas_override is not None:
+            alphas = alphas_override
+
+        if not self.ridge_cv_calc:
+            print("Step : Ridge")
+
+            self.ridge_cv = RidgeCV(
+                fit_intercept=False,
+                alphas=alphas,
+                store_cv_values=True,
+            )
+
+            self.ridge_cv.fit(
                 X=self.X_train,
                 y=self.y_train
             )
@@ -156,8 +205,8 @@ use self.ridge_metrics to get the results")
         if not self.lasso_calc:
             print("Step : Lasso")
 
-            lasso = Lasso()
-            parameter = {"alpha": np.arange(0.01, 10, 0.01)}
+            lasso = Lasso(fit_intercept=False)
+            parameter = {"alpha": np.arange(0.1, 10, 0.01)}
 
             self.clf_lasso = GridSearchCV(
                 estimator=lasso,
@@ -201,6 +250,7 @@ use self.lasso_metrics to get the results")
                 n_alphas=150,
                 cv=enet_parameters["cv"],
                 n_jobs=enet_parameters["n_jobs"],
+                fit_intercept=False
             )
 
             self.clf_enet.fit(
