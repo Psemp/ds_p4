@@ -285,7 +285,7 @@ class Linear_reg():
 
         self.df_predictions["Lasso"] = y_predict
 
-    def use_elnet(self, override_default: dict = None, alphas: list):
+    def use_elnet(self, alphas: list, override_default: dict = None):
 
         enet_parameters = Linear_reg.common_parameters
         print("Step : Elastic Net")
