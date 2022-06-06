@@ -1,11 +1,14 @@
 import pandas as pd
 import numpy as np
+import time
 
 from sklearn.linear_model import LinearRegression, RidgeCV, LassoCV, ElasticNetCV
 from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.dummy import DummyRegressor
 from sklearn import metrics
 from matplotlib import pyplot as plt
+
+from models.time_card import Time_card
 
 
 class Linear_reg():
@@ -31,8 +34,7 @@ class Linear_reg():
 
     def __init__(
             self, dataframe: pd.DataFrame, target: str,
-            override_common: dict = None, split: float = 0.3,
-            ignore_columns: list = None
+            split: float = 0.3, ignore_columns: list = None
             ):
 
         self.df_origin = dataframe
@@ -53,53 +55,44 @@ class Linear_reg():
         #
         ##
 
-        self.override = override_common
         self.std_calc, self.ridge_calc, self.lasso_calc, self.enet_calc = False, False, False, False
         self.listed_ytrain = [value[0] for value in self.y_train]
         self.listed_ytest = [value[0] for value in self.y_test]
         self.df_predictions = pd.DataFrame({"True": self.listed_ytest})
 
-        # Dummy
-        dummy_reg = DummyRegressor()
-        scores_dummy = cross_validate(
-            estimator=dummy_reg,
-            X=self.X_train,
-            y=self.y_train,
-            scoring=["neg_mean_squared_error", "r2"],
-            n_jobs=-1,
-        )
+    def force_split(self, df_train_ovr, df_test_ovr):
+        """
+        Provides an override possibility for train test split. Resets the columns
+        to recreate the matrices. Also recreates the y_test/train vectors and resets the df_predictions
+        with expected values. (If col has to be dropped, need to recall the drop_col method)
 
-        dummy_reg.fit(X=self.X_train, y=self.y_train)
+        Args :
+        - df_train_ovr : training set, with target included
+        - df_test_ovr : testing set, with target included
 
-        y_pred_dummy = dummy_reg.predict(self.X_test)
-        dummy_reg.fit(
-                X=self.X_train,
-                y=self.y_train
-            )
+        Returns :
+        - Void
+        """
 
-        # Metrics Train
-        dummy_mean_mse_train = scores_dummy["test_neg_mean_squared_error"].mean()
-        rmse_dummy_train = np.sqrt(abs(dummy_mean_mse_train))
-        r2_dummy_train = scores_dummy["test_r2"].mean()
-        # /Metrics Train
+        self.df_train = df_train_ovr
+        self.df_test = df_test_ovr
+        self.reset_cols()
+        self.y_train = self.df_train[[self.target]].to_numpy()
+        self.y_test = self.df_test[[self.target]].to_numpy()
+        self.listed_ytrain = [value[0] for value in self.y_train]
+        self.listed_ytest = [value[0] for value in self.y_test]
+        self.df_predictions = pd.DataFrame({"True": self.listed_ytest})
 
-        # Metrics Test
-        dummy_mse_test = metrics.mean_squared_error(y_pred=y_pred_dummy, y_true=self.y_test)
-        dummy_rmse_test = np.sqrt(abs(dummy_mse_test))
-        std_r2_test = metrics.r2_score(y_pred=y_pred_dummy, y_true=self.y_test)
-        self.table_dummy = Linear_reg.get_table(
-            scores_train=(rmse_dummy_train, r2_dummy_train),
-            scores_test=(dummy_rmse_test, std_r2_test)
-            )
-        # /Dummy
-
-    def drop_col(self, col_list):
+    def drop_col(self, col_list: list):
         """
         can be used to drop a column of the train/test set and keep the same data repartition
          to minimize split randomization
         """
-        self.X_train = self.df_train.drop(columns=[self.target + col_list]).to_numpy()
-        self.X_test = self.df_test.drop(columns=[self.target + col_list]).to_numpy()
+        dropcols = []
+        dropcols.append(self.target)
+        [dropcols.append(col) for col in col_list]
+        self.X_train = self.df_train.drop(columns=dropcols).to_numpy()
+        self.X_test = self.df_test.drop(columns=dropcols).to_numpy()
 
     def reset_cols(self):
         """
@@ -135,22 +128,70 @@ class Linear_reg():
                 figsize=(w, h),
                 dpi=dpi,
             )
-            ax1.plot(alpha_list, rmse_list)
+            ax1.plot(alpha_list, rmse_list, color="navy", linewidth=1)
 
-            plt.show()
+            ax1.set_xlabel("Alpha")
+            ax1.set_ylabel("RMSE")
+            fig.suptitle("Evolution de la RMSE en fonction de l'hyperparametre")
 
             if labels is not None:
                 try:
-                    ax1.set_xlabel = (labels["x_label"])
-                    ax1.set_ylabel = (labels["y_label"])
+                    ax1.set_xlabel(labels["x_label"])
+                    ax1.set_ylabel(labels["y_label"])
                     fig.suptitle(labels["title"])
                 except KeyError:
                     print("Please provide all keys values in labels : x_label, y_label, title")
                     pass
 
+            plt.tight_layout()
+            plt.show()
+
         else:
             print("""Cannot use plot on ridge regression with CV not None, cf. sklearn doc\
  on "store_cv_values" on RidgeCV""")
+
+    def dummy_regression(self):
+        dummy_reg = DummyRegressor()
+        scores_dummy = cross_validate(
+            estimator=dummy_reg,
+            X=self.X_train,
+            y=self.y_train,
+            scoring=["neg_mean_squared_error", "r2"],
+            n_jobs=-1,
+            cv=Linear_reg.common_parameters["cv"]
+        )
+
+        t_zero_fit = time.perf_counter()
+        dummy_reg.fit(X=self.X_train, y=self.y_train)
+        t_f_fit = time.perf_counter()
+
+        t_zero_predict = time.perf_counter()
+        y_pred_dummy = dummy_reg.predict(self.X_test)
+        dummy_reg.fit(
+                X=self.X_train,
+                y=self.y_train
+            )
+        t_f_predict = time.perf_counter()
+
+        self.dummy_time_card = Time_card(
+            t_fit=t_f_fit - t_zero_fit,
+            t_predict=t_f_predict - t_zero_predict,
+            )
+
+        # Metrics Train
+        dummy_mean_mse_train = scores_dummy["test_neg_mean_squared_error"].mean()
+        rmse_dummy_train = np.sqrt(abs(dummy_mean_mse_train))
+        r2_dummy_train = scores_dummy["test_r2"].mean()
+        # /Metrics Train
+
+        # Metrics Test
+        dummy_mse_test = metrics.mean_squared_error(y_pred=y_pred_dummy, y_true=self.y_test)
+        dummy_rmse_test = np.sqrt(abs(dummy_mse_test))
+        std_r2_test = metrics.r2_score(y_pred=y_pred_dummy, y_true=self.y_test)
+        self.table_dummy = Linear_reg.get_table(
+            scores_train=(rmse_dummy_train, r2_dummy_train),
+            scores_test=(dummy_rmse_test, std_r2_test)
+            )
 
     def standard_regression(self):
         """
@@ -167,16 +208,29 @@ class Linear_reg():
                     cv=Linear_reg.common_parameters["cv"],
                     n_jobs=Linear_reg.common_parameters["n_jobs"],
                 )
+        t_zero_fit = time.perf_counter()
         self.lin_reg.fit(
             X=self.X_train,
             y=self.y_train
         )
+        t_f_fit = time.perf_counter()
+
+        t_zero_predict = time.perf_counter()
+
+        y_pred_basic = self.lin_reg.predict(self.X_test)
+
+        t_f_predict = time.perf_counter()
+
+        self.ols_time_card = Time_card(
+            t_fit=t_f_fit - t_zero_fit,
+            t_predict=t_f_predict - t_zero_predict,
+            )
+
         # Metrics Train
         std_reg_mean_mse_train = scores_regression["test_neg_mean_squared_error"].mean()
         std_mean_rmse_train = np.sqrt(abs(std_reg_mean_mse_train))
         std_mean_r2_train = scores_regression["test_r2"].mean()
         # /Metrics Train
-        y_pred_basic = self.lin_reg.predict(self.X_test)
         # Metrics Test
         std_mse_test = metrics.mean_squared_error(y_pred=y_pred_basic, y_true=self.y_test)
         std_rmse_test = np.sqrt(abs(std_mse_test))
@@ -191,7 +245,7 @@ class Linear_reg():
 
     def use_ridge_cv(self, alphas):
 
-        if self.override is None:
+        if Linear_reg.common_parameters["cv"] is None:
             self.ridge_cv = RidgeCV(
                 fit_intercept=False,
                 alphas=alphas,
@@ -201,26 +255,40 @@ class Linear_reg():
             self.ridge_cv = RidgeCV(
                 fit_intercept=False,
                 alphas=alphas,
-                cv=self.overide["cv"]
+                cv=Linear_reg.common_parameters["cv"]
             )
+
+        t_zero_fit = time.perf_counter()
 
         self.ridge_cv.fit(
             X=self.X_train,
             y=self.y_train
         )
 
+        t_f_fit = time.perf_counter()
+
         self.ridge_best_alpha = self.ridge_cv.alpha_
+
+        t_zero_predict = time.perf_counter()
+
+        y_predict = self.ridge_cv.predict(X=self.X_test)
+        t_f_predict = time.perf_counter()
+
+        self.ridge_time_card = Time_card(
+            t_fit=t_f_fit - t_zero_fit,
+            t_predict=t_f_predict - t_zero_predict,
+            )
 
         # Metrics Train
         predict_train = self.ridge_cv.predict(X=self.X_train)
-        if self.override is None or self.override["cv"] is None:
+        if Linear_reg.common_parameters["cv"] is None:
             mses_ridge = np.mean(self.ridge_cv.cv_values_, axis=0)[0]
             rmses_ridge = np.sqrt(abs(mses_ridge))
         rmse_train = np.sqrt(abs(self.ridge_cv.best_score_))
         r2_train = metrics.r2_score(y_pred=predict_train, y_true=self.y_train)
         # /Metrics Train
 
-        y_predict = self.ridge_cv.predict(X=self.X_test)
+        self.df_predictions["Ridge"] = y_predict
 
         # Metrics Test
         mse_test = metrics.mean_squared_error(y_pred=y_predict, y_true=self.y_test)
@@ -232,25 +300,36 @@ class Linear_reg():
             scores_train=(rmse_train, r2_train),
             scores_test=(rmse_test, r2_test)
         )
-        if self.override is None or self.override["cv"] is None:
+        if Linear_reg.common_parameters["cv"] is None:
             def get_ridge_plot():
                 Linear_reg.get_plot(rmse_list=rmses_ridge, alpha_list=self.ridge_cv.alphas)
 
             self.ridge_plot = get_ridge_plot
 
-    def use_lasso_cv(self, alphas, cv_method=10):
+    def use_lasso_cv(self, alphas):
         self.lasso_cv = LassoCV(
             fit_intercept=False,
             alphas=alphas,
-            cv=cv_method,
+            cv=Linear_reg.common_parameters["cv"],
             n_jobs=Linear_reg.common_parameters["n_jobs"]
         )
+        t_zero_fit = time.perf_counter()
         self.lasso_cv.fit(
                 X=self.X_train,
                 y=self.listed_ytrain
             )
+        t_f_fit = time.perf_counter()
 
         self.lasso_best_alpha = self.lasso_cv.alpha_
+
+        t_zero_predict = time.perf_counter()
+        y_predict = self.lasso_cv.predict(X=self.X_test)
+        t_f_predict = time.perf_counte
+
+        self.lasso_time_card = Time_card(
+            t_fit=t_f_fit - t_zero_fit,
+            t_predict=t_f_predict - t_zero_predict
+            )
 
         # Metrics Train
         predict_train = self.lasso_cv.predict(X=self.X_train)
@@ -264,8 +343,6 @@ class Linear_reg():
         rmse_train = np.min(rmses_lasso)
         r2_train = metrics.r2_score(y_pred=predict_train, y_true=self.listed_ytrain)
         # /Metrics Train
-
-        y_predict = self.lasso_cv.predict(X=self.X_test)
 
         # Metrics Test
         mse_test = metrics.mean_squared_error(y_pred=y_predict, y_true=self.y_test)
@@ -285,23 +362,32 @@ class Linear_reg():
 
         self.df_predictions["Lasso"] = y_predict
 
-    def use_elnet(self, alphas: list, override_default: dict = None):
+    def use_elnet(self, alphas: list):
 
-        enet_parameters = Linear_reg.common_parameters
-        print("Step : Elastic Net")
         l1_range = np.arange(0.01, 0.99, 0.05)
         self.elnet_cv = ElasticNetCV(
+            fit_intercept=False,
             l1_ratio=l1_range,
             alphas=alphas,
-            n_jobs=enet_parameters["n_jobs"],
-            fit_intercept=False,
-
+            n_jobs=Linear_reg.common_parameters["n_jobs"],
+            cv=Linear_reg.common_parameters["cv"]
         )
 
+        t_zero_fit = time.perf_counter()
         self.elnet_cv.fit(
             X=self.X_train,
             y=self.listed_ytrain
         )
+        t_f_fit = time.perf_counter()
+
+        t_zero_predict = time.perf_counter()
+        y_predict = self.elnet_cv.predict(X=self.X_test)
+        t_f_predict = time.perf_counter()
+
+        self.elnet_time_card = Time_card(
+            t_fit=t_f_fit - t_zero_fit,
+            t_predict=t_f_predict - t_zero_predict
+            )
 
         self.enet_best_l1_ratio = self.elnet_cv.l1_ratio_
         self.enet_best_alpha = self.elnet_cv.alpha_
@@ -319,8 +405,6 @@ class Linear_reg():
         r2_train = metrics.r2_score(y_pred=predict_train, y_true=self.listed_ytrain)
         # /Metrics Train
 
-        y_predict = self.elnet_cv.predict(X=self.X_test)
-
         # Metrics Test
         mse_test = metrics.mean_squared_error(y_pred=y_predict, y_true=self.y_test)
         rmse_test = np.sqrt(abs(mse_test))
@@ -337,6 +421,7 @@ class Linear_reg():
         self.enet_calc = True
 
     def execute_all(self):
+        self.dummy_regression()
         self.standard_regression()
         elnet_alpha_start = float(input("Elastic Net alpha start : "))
         elnet_alpha_end = float(input("Elastic Net alpha end : "))
@@ -353,3 +438,39 @@ class Linear_reg():
         lasso_alpha_step = float(input("Lasso alpha step : "))
         lasso_range = np.arange(lasso_alpha_start, lasso_alpha_end, lasso_alpha_step)
         self.use_lasso_cv(lasso_range)
+
+    def format_all_metrics(self, include_dummy: bool = False):
+        """
+        Joins all metrics of linear regression in current state.
+        Renames columns from metric_name to metric_name_regression_method
+        - Assigns to self.all_metrics
+
+        Args :
+        - include_dummy : bool, default False : Include dummy_regression stats in the table
+
+        Returns :
+        - self.all_metrics
+        """
+        ols_t = self.std_table.rename(columns={"RMSE": "RMSE_OLS", "R2": "R2_OLS"})
+        ridge_t = self.ridge_table.rename(columns={"RMSE": "RMSE_Ridge", "R2": "R2_Ridge"})
+        lasso_t = self.lasso_table.rename(columns={"RMSE": "RMSE_LASSO", "R2": "R2_LASSO"})
+        elnet_t = self.elnet_table.rename(columns={"RMSE": "RMSE_Elastic_Net", "R2": "R2_Elastic_Net"})
+        if include_dummy:
+            dummy_t = self.table_dummy.rename(columns={"RMSE": "RMSE_Dummy", "R2": "R2_Dummy"})
+
+        all_metrics = ols_t.join(ridge_t, how="right")
+        all_metrics = all_metrics.join(lasso_t, how="right")
+        all_metrics = all_metrics.join(elnet_t, how="right")
+
+        if include_dummy:
+            all_metrics = all_metrics.join(dummy_t, how="right")
+
+        self.all_metrics = all_metrics
+        return self.all_metrics
+
+    def get_common_params():
+        """
+        Prints current state of common parameters
+        """
+        for key in Linear_reg.common_parameters.keys():
+            print(f"{key} = {Linear_reg.common_parameters[key]}")
