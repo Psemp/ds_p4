@@ -1,5 +1,7 @@
 import pandas as pd
+import seaborn as sns
 import numpy as np
+
 import time
 
 from sklearn.linear_model import LinearRegression, RidgeCV, LassoCV, ElasticNetCV
@@ -150,6 +152,46 @@ class Linear_reg():
             print("""Cannot use plot on ridge regression with CV not None, cf. sklearn doc\
  on "store_cv_values" on RidgeCV""")
 
+    def scatter_true_pred(self, regression_name: str, fig_params: dict = None):
+        """
+        Plots values from regression as y=true, x=predicted, using x=y as guideline
+
+        Args :
+        - regression_name : the name of the column of df_predictions to plot against y_true
+        - fig_params : not defined atm
+        """
+
+        if regression_name not in self.df_predictions.columns:
+            raise KeyError(f"regression name must be part of {self.df_predictions.columns}")
+
+        fig, (ax1) = plt.subplots(
+            ncols=1,
+            nrows=1,
+            figsize=(4, 4),
+            dpi=155,
+        )
+
+        ax1 = sns.scatterplot(
+            data=self.df_predictions,
+            x="True",
+            y=f"{regression_name}"
+            )
+
+        x_min = round(min(self.df_predictions["True"].values)) - 1
+        x_max = round(max(self.df_predictions["True"].values)) + 1
+        x = np.arange(x_min, x_max, 1)
+        y = x
+        ax1.plot(x, y, color="navy", linewidth=.9)
+        ###
+        # Titles/Lables
+        ax1.set_xlabel(f"{regression_name}")
+        ax1.set_ylabel("Y_True")
+        ax1.set_ylim(x_min, x_max)
+        ax1.set_xlim(x_min, x_max)
+        #
+        ###
+        plt.show()
+
     def dummy_regression(self):
         dummy_reg = DummyRegressor()
         scores_dummy = cross_validate(
@@ -240,7 +282,7 @@ class Linear_reg():
             scores_train=(std_mean_rmse_train, std_mean_r2_train),
             scores_test=(std_rmse_test, std_r2_test)
         )
-        self.df_predictions["basic_regression"] = y_pred_basic
+        self.df_predictions["ols_regression"] = y_pred_basic
         self.std_calc = True
 
     def use_ridge_cv(self, alphas):
@@ -324,7 +366,7 @@ class Linear_reg():
 
         t_zero_predict = time.perf_counter()
         y_predict = self.lasso_cv.predict(X=self.X_test)
-        t_f_predict = time.perf_counte
+        t_f_predict = time.perf_counter()
 
         self.lasso_time_card = Time_card(
             t_fit=t_f_fit - t_zero_fit,
