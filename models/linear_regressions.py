@@ -108,8 +108,8 @@ class Linear_reg():
         return pd.DataFrame(
             columns=["RMSE", "R2"],
             data=[
-                [scores_train[0], scores_test[0]],
-                [scores_train[1], scores_test[1]],
+                [scores_train[0], scores_train[1]],
+                [scores_test[0], scores_test[1]],
                 ],
             index=["Train", "Test"]
         )
@@ -462,23 +462,34 @@ class Linear_reg():
 
         self.enet_calc = True
 
-    def execute_all(self):
+    def execute_all(self, alphas_ridge=None, alphas_elnet=None, alphas_lasso=None):
         self.dummy_regression()
         self.standard_regression()
-        elnet_alpha_start = float(input("Elastic Net alpha start : "))
-        elnet_alpha_end = float(input("Elastic Net alpha end : "))
-        elnet_alpha_step = float(input("Elastic Net alpha step : "))
-        elnet_range = np.arange(elnet_alpha_start, elnet_alpha_end, elnet_alpha_step)
+        if alphas_elnet is None:
+            elnet_alpha_start = float(input("Elastic Net alpha start : "))
+            elnet_alpha_end = float(input("Elastic Net alpha end : "))
+            elnet_alpha_step = float(input("Elastic Net alpha step : "))
+            elnet_range = np.arange(elnet_alpha_start, elnet_alpha_end, elnet_alpha_step)
+        elif alphas_elnet is not None:
+            elnet_range = alphas_elnet
         self.use_elnet(alphas=elnet_range)
-        ridge_alpha_start = float(input("Ridge alpha start : "))
-        ridge_alpha_end = float(input("Ridge alpha end : "))
-        ridge_alpha_step = float(input("Ridge alpha step : "))
-        ridge_range = np.arange(ridge_alpha_start, ridge_alpha_end, ridge_alpha_step)
+
+        if alphas_ridge is None:
+            ridge_alpha_start = float(input("Ridge alpha start : "))
+            ridge_alpha_end = float(input("Ridge alpha end : "))
+            ridge_alpha_step = float(input("Ridge alpha step : "))
+            ridge_range = np.arange(ridge_alpha_start, ridge_alpha_end, ridge_alpha_step)
+        elif alphas_ridge is not None:
+            ridge_range = alphas_ridge
         self.use_ridge_cv(ridge_range)
-        lasso_alpha_start = float(input("Lasso alpha start : "))
-        lasso_alpha_end = float(input("Lasso alpha end : "))
-        lasso_alpha_step = float(input("Lasso alpha step : "))
-        lasso_range = np.arange(lasso_alpha_start, lasso_alpha_end, lasso_alpha_step)
+
+        if alphas_lasso is None:
+            lasso_alpha_start = float(input("Lasso alpha start : "))
+            lasso_alpha_end = float(input("Lasso alpha end : "))
+            lasso_alpha_step = float(input("Lasso alpha step : "))
+            lasso_range = np.arange(lasso_alpha_start, lasso_alpha_end, lasso_alpha_step)
+        elif alphas_lasso is not None:
+            lasso_range = alphas_lasso
         self.use_lasso_cv(lasso_range)
 
     def format_all_metrics(self, include_dummy: bool = False):
