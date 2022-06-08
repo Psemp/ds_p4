@@ -1,4 +1,4 @@
-import numpy as np
+import json
 
 
 def freeze_model(model, save_file: bool = False, file_path: str = None):
@@ -20,8 +20,10 @@ def freeze_model(model, save_file: bool = False, file_path: str = None):
     if not save_file:
         return ids_train, ids_test
     elif save_file:
-        ids = np.array([ids_train, ids_test], dtype=object)
+        ids_dict = {"train": ids_train.tolist(), "test": ids_test.tolist()}
         if file_path is None:
-            np.savetxt("./freeze_splits.csv", ids, fmt="%s")
+            with open("splits.json", "w") as json_file:
+                json.dump(ids_dict, json_file)
         elif file_path is not None:
-            np.savetxt(file_path, ids, fmt="%s")
+            with open(file_path, "w") as json_file:
+                json.dump(ids_dict, json_file)

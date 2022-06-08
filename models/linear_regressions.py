@@ -521,7 +521,7 @@ class Linear_reg():
         self.all_metrics = all_metrics
         return self.all_metrics
 
-    def get_common_params():
+    def get_common_params(self):
         """
         Prints current state of common parameters
         """
