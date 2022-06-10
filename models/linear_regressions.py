@@ -62,7 +62,7 @@ class Linear_reg():
         self.listed_ytest = [value[0] for value in self.y_test]
         self.df_predictions = pd.DataFrame({"True": self.listed_ytest})
 
-    def force_split(self, df_train_ovr, df_test_ovr):
+    def force_split(self, df_train_ovr: pd.DataFrame, df_test_ovr: pd.DataFrame):
         """
         Provides an override possibility for train test split. Resets the columns
         to recreate the matrices. Also recreates the y_test/train vectors and resets the df_predictions

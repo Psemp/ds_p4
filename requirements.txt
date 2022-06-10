@@ -15,3 +15,4 @@ flake8
 python-dotenv
 pytest
 lux-api
+shap
