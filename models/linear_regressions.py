@@ -110,8 +110,9 @@ class Linear_reg():
             data=[
                 [scores_train[0], scores_train[1]],
                 [scores_test[0], scores_test[1]],
+                [f"{round(scores_test[0] / scores_train[0], 3)}", f"{round(scores_test[1] / scores_train[1], 3)}"]
                 ],
-            index=["Train", "Test"]
+            index=["Train", "Test", "Test/Train"]
         )
 
     def get_plot(rmse_list, alpha_list, fig_params: dict = None, labels: dict = None):
