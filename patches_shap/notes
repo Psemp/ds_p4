@@ -1,0 +1,5 @@
+its full of PEP8 Errors and undefined vars but honestly I do not have the patience to correct everything
+just replace the corresponding files : if using venv : put the files in "env/lib/python3.10(OR WHATEVER VERSION YOU ARE USING)/site-packages/shap/plots",
+if using conda, you're on your own pal
+Although the plots have been patched to the specific use of this project, the code is still very much unstable, so any deviation from the default use or the applications of the package to this specific project should be met with no hope of this thing working.
+Note : I am too afraid to make further modifications, so all the 205 remaining problems (according to flake8) will just have to sit tight 
