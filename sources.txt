@@ -9,3 +9,4 @@ mucho legal stuff / urbanism definitions : https://www.lawinsider.com/
 Source energy vs Site energy : https://www.energystar.gov/buildings/benchmark/understand_metrics/source_site_difference
 Weather Normalized : https://energystar-mesa.force.com/PortfolioManager/s/article/What-is-Weather-Normalized-energy-1600088536894
 shap : https://shap.readthedocs.io/en/latest/index.html
+E* and Property type : https://www.energystar.gov/buildings/benchmark/understand_metrics/score_details
