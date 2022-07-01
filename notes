@@ -3,3 +3,6 @@ seattle_scaled_clean_data.csv --> OneHotEncoder was applied on :
 2 : PrimaryPropertyType
 
 To recognize which is which, Neighborhood cols are always capitalized
+
+the package SHAP is full of mistakes if user deviates from default behavior. As noted in the readme -->
+ - I patched several functions to return plt.gcf() (get current figure) if user doesnt want to outright display the plot
