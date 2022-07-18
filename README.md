@@ -24,7 +24,7 @@ Data from : [here](https://www.kaggle.com/datasets/city-of-seattle/sea-building-
 
 ### 1 : cleaning = nb_00
 ### 2 : short analysis = nb_01
-### 3 : feature engineering : nb_02 (though it's not actually doing anything atm)
+### 3 : feature engineering : nb_02
 ### 4 : Modelisation of GHG : nb_03
 ### 5 : Modelisation of EUI : nb_04
 
