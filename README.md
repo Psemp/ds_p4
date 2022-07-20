@@ -33,6 +33,7 @@ Data from : [here](https://www.kaggle.com/datasets/city-of-seattle/sea-building-
 ### Possible number 6 : Energy Star cert predict
 
 <hr>
+
 #### Side notes :
 
 - Metadata read is informative but website (sources) is much more verbose.
